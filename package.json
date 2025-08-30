@@ -29,5 +29,8 @@
     "mac": {
       "target": "dmg"
     }
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.56.1"
   }
 }
