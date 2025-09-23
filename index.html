@@ -17,6 +17,7 @@
         }
         .app-sidebar {
             background-color: #1a1a1a;
+            transition: width 0.3s ease-in-out;
         }
         .menu-link.active {
             background-color: #10b981; /* emerald-500 */
@@ -55,6 +56,33 @@
         #auth-container, #app-container {
             display: none; /* Escondidos por padrão */
         }
+
+        /* Sidebar Collapse Styles */
+        .app-sidebar.collapsed {
+            width: 5rem; /* 80px */
+        }
+        .app-sidebar.collapsed .sidebar-header span,
+        .app-sidebar.collapsed .menu-link span,
+        .app-sidebar.collapsed .menu-title {
+            display: none;
+            opacity: 0;
+        }
+        .app-sidebar.collapsed .sidebar-header {
+            padding-bottom: 2rem;
+        }
+        .app-sidebar.collapsed .sidebar-header a {
+            justify-content: center;
+        }
+        .app-sidebar.collapsed .menu-link {
+            justify-content: center;
+        }
+        #sidebar-toggle-btn i {
+            transition: transform 0.3s ease-in-out;
+        }
+        .app-sidebar.collapsed #sidebar-toggle-btn i {
+            transform: rotate(180deg);
+        }
+
     </style>
 </head>
 <body class="text-gray-800 bg-gray-100">
@@ -122,9 +150,14 @@
                     </div>
                 </nav>
                 <div class="sidebar-footer mt-auto px-2">
-                            <a href="#" id="logout-button" class="menu-link flex items-center gap-3 py-2.5 px-3 rounded-md text-sm font-medium">
-                                <i class="fas fa-sign-out-alt fa-fw"></i><span>Sair</span>
-                            </a>
+                    <a href="#" id="logout-button" class="menu-link flex items-center gap-3 py-2.5 px-3 rounded-md text-sm font-medium">
+                        <i class="fas fa-sign-out-alt fa-fw"></i><span>Sair</span>
+                    </a>
+                </div>
+                <div class="border-t border-gray-700 mt-4 pt-4 px-2">
+                    <button id="sidebar-toggle-btn" class="w-full text-gray-400 hover:text-white hover:bg-gray-700 py-2.5 px-3 rounded-md text-sm font-medium flex items-center justify-center">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
                 </div>
             </aside>
 
@@ -392,8 +425,11 @@
         </div>
 
         <div id="edit-arquiteto-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 items-center justify-center p-4 overflow-y-auto">
-            <div class="bg-white rounded-2xl shadow-lg p-6 sm:p-8 w-full max-w-3xl my-8">
+            <div class="bg-white rounded-2xl shadow-lg p-6 sm:p-8 w-full max-w-3xl my-8 relative">
                 <h2 class="text-xl font-semibold mb-6 border-b pb-4">Ficha do Arquiteto</h2>
+                <button type="button" id="close-edit-modal-x-btn" class="absolute top-6 right-6 text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times fa-lg"></i>
+                </button>
                 <form id="edit-arquiteto-form" class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                     <input type="hidden" id="edit-arquiteto-original-id">
                     <div>
@@ -457,8 +493,8 @@
                     </div>
 
                     <div class="md:col-span-2 flex justify-end gap-4 mt-6">
-                        <button type="button" id="cancel-edit-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-lg">Fechar</button>
                         <button type="button" id="consultar-vendas-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg">Consultar Vendas</button>
+                        <button type="button" id="consultar-vendas-sysled-btn" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-6 rounded-lg">Vendas Sysled</button>
                         <button type="button" id="gerar-pagamento-ficha-btn" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-6 rounded-lg">Gerar Pagamento</button>
                         <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-6 rounded-lg">Salvar Alterações</button>
                     </div>
@@ -749,9 +785,10 @@
             document.getElementById('arquitetos-table-container').addEventListener('click', this.handleArquitetosTableClick.bind(this));
             // --- Ficha do Arquiteto (Edit Modal) ---
             document.getElementById('edit-arquiteto-form').addEventListener('submit', this.handleEditArquiteto.bind(this));
-            document.getElementById('cancel-edit-btn').addEventListener('click', this.closeEditModal.bind(this));
+            document.getElementById('close-edit-modal-x-btn').addEventListener('click', this.closeEditModal.bind(this));
             document.getElementById('gerar-pagamento-ficha-btn').addEventListener('click', this.handleGerarPagamentoFicha.bind(this));
             document.getElementById('consultar-vendas-btn').addEventListener('click', this.handleConsultarVendasClick.bind(this));
+            document.getElementById('consultar-vendas-sysled-btn').addEventListener('click', this.handleConsultarVendasSysledClick.bind(this));
             
             document.getElementById('add-value-form').addEventListener('submit', this.handleAddValue.bind(this));
             document.getElementById('cancel-add-value-btn').addEventListener('click', this.closeAddValueModal.bind(this));
@@ -803,6 +840,15 @@
                     this.renderSysledTable();
                 }
             });
+
+            // --- Sidebar Toggle ---
+            const sidebar = document.getElementById('app-sidebar');
+            const toggleButton = document.getElementById('sidebar-toggle-btn');
+            if (toggleButton && sidebar) {
+                toggleButton.addEventListener('click', () => {
+                    sidebar.classList.toggle('collapsed');
+                });
+            }
 
             // --- Aba Resultados ---
             document.getElementById('calculate-results-btn').addEventListener('click', this.renderResultados.bind(this));
@@ -1080,6 +1126,53 @@
             } catch (error) {
                 console.error('Erro ao consultar vendas:', error);
                 container.innerHTML = `<p class="text-center text-red-500 py-8">Erro ao consultar vendas. Verifique o console.</p>`;
+            }
+        }
+
+        async handleConsultarVendasSysledClick(e) {
+            e.preventDefault();
+            const arquitetoId = document.getElementById('edit-arquiteto-original-id').value;
+            if (!arquitetoId) {
+                alert('ID do arquiteto não encontrado.');
+                return;
+            }
+    
+            const arquiteto = this.arquitetos.find(a => a.id === arquitetoId);
+            const modalTitle = document.getElementById('sales-history-modal-title');
+            const container = document.getElementById('sales-history-table-container');
+    
+            modalTitle.textContent = `Vendas da API Sysled para ${arquiteto ? arquiteto.nome : arquitetoId}`;
+            container.innerHTML = `<p class="text-center text-gray-500 py-8">Consultando API Sysled... <i class="fas fa-spinner fa-spin"></i></p>`;
+            document.getElementById('sales-history-modal').classList.add('flex');
+    
+            try {
+                // Fetch data if not already present
+                if (this.sysledData.length === 0) {
+                    await this.fetchSysledData();
+                }
+    
+                if (this.sysledData.length === 0) {
+                     container.innerHTML = `<p class="text-center text-gray-500 py-8">Nenhum dado da API Sysled foi carregado. Tente atualizar na aba 'Consulta Sysled'.</p>`;
+                     return;
+                }
+                
+                const salesData = this.sysledData.filter(row => 
+                    row.idParceiro && 
+                    String(row.idParceiro) === arquitetoId &&
+                    row.statusPagamento == 1
+                );
+                
+                const mappedSalesData = salesData.map(sale => ({
+                    id_pedido: sale.idPedido || 'N/A',
+                    valor_nota: this.parseApiNumber(sale.valorNota),
+                    data_finalizacao_prevenda: sale.dataFinalizacaoPrevenda
+                }));
+
+                this.renderSalesHistoryModal(mappedSalesData);
+    
+            } catch (error) {
+                console.error('Erro ao consultar vendas na Sysled:', error);
+                container.innerHTML = `<p class="text-center text-red-500 py-8">Erro ao consultar vendas na API Sysled. Verifique o console.</p>`;
             }
         }
     
@@ -2426,3 +2519,4 @@
 </script>
 </body>
 </html>
+
