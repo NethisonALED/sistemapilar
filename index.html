@@ -522,6 +522,37 @@
             </div>
         </div>
 
+        <!-- MODAL PARA DETALHES DA COMISSÃO MANUAL -->
+        <div id="comissao-manual-details-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-lg p-6 sm:p-8 w-full max-w-lg">
+                <h2 class="text-xl font-semibold mb-4">Detalhes da Inclusão Manual</h2>
+                <div id="comissao-manual-details-content" class="space-y-3">
+                    <!-- Details will be populated here by JS -->
+                </div>
+                <div class="flex justify-end mt-6">
+                    <button type="button" id="close-comissao-manual-details-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-lg">Fechar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL PARA EDITAR VALOR RT -->
+        <div id="edit-rt-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-lg p-6 sm:p-8 w-full max-w-md">
+                <h2 class="text-xl font-semibold mb-4">Editar Valor do RT</h2>
+                <form id="edit-rt-form">
+                    <input type="hidden" id="edit-rt-pagamento-id">
+                    <input type="hidden" id="edit-rt-pagamento-date">
+                    <div>
+                        <label for="edit-rt-input" class="block text-sm font-medium text-gray-600 mb-1">Novo Valor do RT</label>
+                        <input type="number" step="0.01" id="edit-rt-input" class="w-full p-3 bg-gray-50 border rounded-lg" required placeholder="Ex: 350.75">
+                    </div>
+                    <div class="flex justify-end gap-4 mt-6">
+                        <button type="button" id="cancel-edit-rt-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-lg">Cancelar</button>
+                        <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-6 rounded-lg">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
     </div>
 
@@ -697,6 +728,8 @@
             
             // --- NOVA: Aba Inclusão Manual ---
             document.getElementById('add-comissao-manual-form').addEventListener('submit', this.handleAddComissaoManual.bind(this));
+            document.getElementById('historico-manual-container').addEventListener('click', this.handleHistoricoManualClick.bind(this));
+            document.getElementById('close-comissao-manual-details-btn').addEventListener('click', this.closeComissaoManualDetailsModal.bind(this));
 
             // --- Aba Arquitetos ---
             document.getElementById('add-arquiteto-form').addEventListener('submit', this.handleAddArquiteto.bind(this));
@@ -730,6 +763,8 @@
             pagamentosContainer.addEventListener('click', this.handlePagamentosClick.bind(this));
             document.getElementById('close-comprovante-modal-btn').addEventListener('click', this.closeComprovanteModal.bind(this));
             document.getElementById('pagamento-search-input').addEventListener('input', (e) => this.renderPagamentos(e.target.value.trim()));
+            document.getElementById('edit-rt-form').addEventListener('submit', this.handleUpdateRtValue.bind(this));
+            document.getElementById('cancel-edit-rt-btn').addEventListener('click', this.closeEditRtModal.bind(this));
 
             // --- Aba Arquivos Importados ---
             document.getElementById('arquivos-importados-container').addEventListener('click', this.handleArquivosImportadosClick.bind(this));
@@ -867,8 +902,27 @@
             } else {
                  alert('Comissão manual adicionada com sucesso!');
             }
+
+            // 3. (NOVO) Se houver ID da Venda, registrar em sysled_imports para evitar duplicatas
+            if (idVenda) {
+                const sysledImportPayload = {
+                    id_parceiro: idParceiro,
+                    valor_nota: valorVenda,
+                    data_finalizacao_prevenda: document.getElementById('manual-data-venda').value,
+                    id_pedido: idVenda
+                };
+
+                const { error: sysledError } = await supabase
+                    .from('sysled_imports')
+                    .insert(sysledImportPayload);
+
+                if (sysledError) {
+                    console.error("Erro ao registrar na tabela sysled_imports:", sysledError);
+                    alert("A comissão foi processada, mas houve um erro ao registrar na tabela de controle de duplicatas (sysled_imports).");
+                }
+            }
             
-            // 3. Atualizar UI
+            // 4. Atualizar UI
             form.reset();
             await this.loadData();
             this.renderAll();
@@ -884,6 +938,11 @@
             const rowsHtml = this.comissoesManuais.map(c => `
                 <tr class="border-b text-sm">
                     <td class="p-2">${c.id_parceiro}</td>
+                    <td class="p-2">
+                        <a href="#" class="view-comissao-details-btn text-blue-600 hover:underline" data-comissao-id="${c.id}">
+                            ${c.id_venda || 'N/A'}
+                        </a>
+                    </td>
                     <td class="p-2">${this.formatApiDateToBR(c.data_venda)}</td>
                     <td class="p-2 text-right">${this.formatCurrency(c.valor_venda)}</td>
                     <td class="p-2" title="${c.justificativa}">${c.justificativa.substring(0, 30)}${c.justificativa.length > 30 ? '...' : ''}</td>
@@ -896,6 +955,7 @@
                     <thead>
                         <tr class="bg-gray-100 text-xs uppercase">
                             <th class="p-2 text-left">ID Parceiro</th>
+                            <th class="p-2 text-left">ID Venda</th>
                             <th class="p-2 text-left">Data</th>
                             <th class="p-2 text-right">Valor</th>
                             <th class="p-2 text-left">Justificativa</th>
@@ -905,6 +965,63 @@
                     <tbody>${rowsHtml}</tbody>
                 </table>
             `;
+        }
+        
+        handleHistoricoManualClick(e) {
+            const detailsBtn = e.target.closest('.view-comissao-details-btn');
+            if (detailsBtn) {
+                e.preventDefault();
+                const comissaoId = detailsBtn.dataset.comissaoId;
+                this.openComissaoManualDetailsModal(parseInt(comissaoId, 10));
+            }
+        }
+
+        openComissaoManualDetailsModal(comissaoId) {
+            const comissao = this.comissoesManuais.find(c => c.id === comissaoId);
+            if (!comissao) {
+                alert('Detalhes da comissão não encontrados.');
+                return;
+            }
+            const arquiteto = this.arquitetos.find(a => a.id === comissao.id_parceiro);
+            const nomeParceiro = arquiteto ? arquiteto.nome : 'Parceiro não encontrado';
+
+            const contentContainer = document.getElementById('comissao-manual-details-content');
+            contentContainer.innerHTML = `
+                <div class="grid grid-cols-3 gap-2">
+                    <p class="font-semibold text-gray-600 col-span-1">ID Parceiro:</p>
+                    <p class="col-span-2">${comissao.id_parceiro}</p>
+                </div>
+                 <div class="grid grid-cols-3 gap-2">
+                    <p class="font-semibold text-gray-600 col-span-1">Nome Parceiro:</p>
+                    <p class="col-span-2">${nomeParceiro}</p>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <p class="font-semibold text-gray-600 col-span-1">ID Venda:</p>
+                    <p class="col-span-2">${comissao.id_venda || 'N/A'}</p>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <p class="font-semibold text-gray-600 col-span-1">Valor Venda:</p>
+                    <p class="col-span-2">${this.formatCurrency(comissao.valor_venda)}</p>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <p class="font-semibold text-gray-600 col-span-1">Data Venda:</p>
+                    <p class="col-span-2">${this.formatApiDateToBR(comissao.data_venda)}</p>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <p class="font-semibold text-gray-600 col-span-1">Consultor:</p>
+                    <p class="col-span-2">${comissao.consultor || 'N/A'}</p>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <p class="font-semibold text-gray-600 col-span-1">Justificativa:</p>
+                    <p class="col-span-2 whitespace-pre-wrap">${comissao.justificativa}</p>
+                </div>
+            `;
+
+            document.getElementById('comissao-manual-details-modal').classList.add('flex');
+        }
+
+        closeComissaoManualDetailsModal() {
+            document.getElementById('comissao-manual-details-modal').classList.remove('flex');
         }
 
         // --- LÓGICA DE PAGAMENTO ---
@@ -1202,7 +1319,10 @@
                             <tr class="border-b text-sm">
                                 <td class="p-2">${p.id_parceiro}</td>
                                 <td class="p-2">${p.parceiro}</td>
-                                <td class="p-2 text-right font-semibold">${this.formatCurrency(p.rt_valor)}</td>
+                                <td class="p-2 text-right font-semibold">
+                                    ${this.formatCurrency(p.rt_valor)}
+                                    <button class="edit-rt-btn text-blue-500 hover:text-blue-700 ml-2" title="Editar Valor RT" data-date="${date}" data-id="${p.id}"><i class="fas fa-edit fa-xs"></i></button>
+                                </td>
                                 <td class="p-2 text-center">
                                     <input type="checkbox" class="pagamento-status h-5 w-5" data-date="${date}" data-id="${p.id}" ${p.pago ? 'checked' : ''}>
                                 </td>
@@ -1450,6 +1570,7 @@
             const deleteBtn = e.target.closest('.delete-pagamentos-btn');
             const downloadBtn = e.target.closest('.download-xlsx-btn');
             const relatorioBtn = e.target.closest('.gerar-relatorio-btn');
+            const editRtBtn = e.target.closest('.edit-rt-btn');
 
             if (viewBtn && !viewBtn.disabled) {
                 e.preventDefault();
@@ -1463,6 +1584,9 @@
             }
             if (relatorioBtn) {
                 this.generatePagamentoPrint(relatorioBtn.dataset.date);
+            }
+            if (editRtBtn) {
+                this.openEditRtModal(editRtBtn.dataset.date, editRtBtn.dataset.id);
             }
         }
 
@@ -1516,6 +1640,53 @@
             }
             document.getElementById('comprovante-modal').classList.add('flex');
         }
+        
+        openEditRtModal(date, pagamentoId) {
+            const pagamento = this.pagamentos[date]?.find(p => p.id.toString() === pagamentoId);
+            if (!pagamento) return;
+            
+            document.getElementById('edit-rt-pagamento-id').value = pagamento.id;
+            document.getElementById('edit-rt-pagamento-date').value = date;
+            document.getElementById('edit-rt-input').value = this.parseCurrency(pagamento.rt_valor);
+            
+            document.getElementById('edit-rt-modal').classList.add('flex');
+        }
+    
+        closeEditRtModal() {
+            document.getElementById('edit-rt-modal').classList.remove('flex');
+            document.getElementById('edit-rt-form').reset();
+        }
+    
+        async handleUpdateRtValue(e) {
+            e.preventDefault();
+            const pagamentoId = document.getElementById('edit-rt-pagamento-id').value;
+            const date = document.getElementById('edit-rt-pagamento-date').value;
+            const newValue = parseFloat(document.getElementById('edit-rt-input').value);
+    
+            if (isNaN(newValue) || newValue < 0) {
+                alert('Por favor, insira um valor válido.');
+                return;
+            }
+    
+            const pagamento = this.pagamentos[date]?.find(p => p.id.toString() === pagamentoId);
+            if (pagamento) {
+                const { error } = await supabase
+                    .from('pagamentos')
+                    .update({ rt_valor: newValue })
+                    .eq('id', pagamento.id);
+    
+                if (error) {
+                    alert("Erro ao atualizar o valor: " + error.message);
+                } else {
+                    pagamento.rt_valor = newValue;
+                    this.renderPagamentos();
+                    this.renderResultados(); // Recalcula os totais
+                    this.closeEditRtModal();
+                    alert('Valor do RT atualizado com sucesso!');
+                }
+            }
+        }
+
 
         exportPagamentosXLSX(date) {
             const data = this.pagamentos[date];
@@ -1623,7 +1794,7 @@
                         else if (lowerCaseHeader.includes('valor') || lowerCaseHeader.includes('total') || lowerCaseHeader.includes('valornota')) {
                             if (cellValue !== null && !isNaN(Number(String(cellValue)))) cellValue = this.formatApiNumberToBR(cellValue);
                         }
-                        return `<td class="p-2">${cellValue === null || cellValue === undefined ? '' : ''}</td>`;
+                        return `<td class="p-2">${cellValue === null || cellValue === undefined ? '' : cellValue}</td>`;
                     }).join('');
                     return `<tr class="border-b text-sm hover:bg-gray-50">${cells}</tr>`;
                 }).join('');
@@ -1852,15 +2023,35 @@
         async handleEditArquiteto(e) {
             e.preventDefault();
             const originalId = document.getElementById('edit-arquiteto-original-id').value;
+            const arquiteto = this.arquitetos.find(a => a.id === originalId);
+            if (!arquiteto) {
+                alert('Arquiteto não encontrado!');
+                return;
+            }
+
             const updatedData = {
-                nome: document.getElementById('edit-arquiteto-nome').value, email: document.getElementById('edit-arquiteto-email').value,
-                telefone: document.getElementById('edit-arquiteto-telefone').value, pix: document.getElementById('edit-arquiteto-pix').value,
+                nome: document.getElementById('edit-arquiteto-nome').value, 
+                email: document.getElementById('edit-arquiteto-email').value,
+                telefone: document.getElementById('edit-arquiteto-telefone').value, 
+                pix: document.getElementById('edit-arquiteto-pix').value,
                 salesCount: parseInt(document.getElementById('edit-arquiteto-vendas').value, 10) || 0,
                 rtPercentual: parseFloat(document.getElementById('rt-percentual').value)
             };
+
+            // Se a porcentagem de RT mudou, recalcula o valor acumulado.
+            if (this.schemaHasRtAcumulado && updatedData.rtPercentual !== arquiteto.rtPercentual) {
+                const valorVendasTotal = arquiteto.valorVendasTotal || 0;
+                const rtTotalPago = arquiteto.rt_total_pago || 0;
+                const totalComissaoCalculada = valorVendasTotal * updatedData.rtPercentual;
+                
+                // O novo valor acumulado é o total de comissão recalculado menos o que já foi pago.
+                updatedData.rt_acumulado = totalComissaoCalculada - rtTotalPago;
+            }
+            
             const { data, error } = await supabase.from('arquitetos').update(updatedData).eq('id', originalId).select().single();
-            if (error) { alert("Erro ao salvar: " + error.message); }
-            else {
+            if (error) { 
+                alert("Erro ao salvar: " + error.message); 
+            } else {
                 const index = this.arquitetos.findIndex(a => a.id === originalId);
                 this.arquitetos[index] = { ...this.arquitetos[index], ...data };
                 this.renderAll();
@@ -2142,5 +2333,4 @@
 </script>
 </body>
 </html>
-
 
