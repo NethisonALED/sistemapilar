@@ -599,6 +599,21 @@
                 </form>
             </div>
         </div>
+        
+        <!-- MODAL PARA DETALHES DA VENDA -->
+        <div id="sale-details-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-lg p-6 sm:p-8 w-full max-w-2xl">
+                <h2 class="text-xl font-semibold mb-4" id="sale-details-modal-title">Detalhes da Venda</h2>
+                <div id="sale-details-content" class="max-h-[60vh] overflow-y-auto">
+                    <!-- Details will be populated here by JS -->
+                </div>
+                <div class="flex justify-end gap-4 mt-6">
+                    <button type="button" id="import-single-sale-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg">Importar Venda</button>
+                    <button type="button" id="close-sale-details-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-lg">Fechar</button>
+                </div>
+            </div>
+        </div>
+
 
     </div>
 
@@ -819,7 +834,12 @@
             document.getElementById('cancel-edit-rt-btn').addEventListener('click', this.closeEditRtModal.bind(this));
 
             // --- Modal Histórico de Vendas ---
+            document.getElementById('sales-history-table-container').addEventListener('click', this.handleSalesHistoryTableClick.bind(this));
             document.getElementById('close-sales-history-btn').addEventListener('click', this.closeSalesHistoryModal.bind(this)); 
+            
+            // --- Modal Detalhes da Venda ---
+            document.getElementById('close-sale-details-btn').addEventListener('click', this.closeSaleDetailsModal.bind(this));
+            document.getElementById('import-single-sale-btn').addEventListener('click', this.handleImportSingleSale.bind(this));
 
             // --- Aba Arquivos Importados ---
             document.getElementById('arquivos-importados-container').addEventListener('click', this.handleArquivosImportadosClick.bind(this));
@@ -852,13 +872,7 @@
 
             // --- Aba Resultados ---
             document.getElementById('calculate-results-btn').addEventListener('click', this.renderResultados.bind(this));
-
-
-
         }
-
-        
-
 
         renderAll() {
             this.renderArquitetosTable();
@@ -1121,7 +1135,7 @@
                     throw error;
                 }
                 
-                this.renderSalesHistoryModal(data);
+                this.renderSalesHistoryModal(data, false); // Not from API
     
             } catch (error) {
                 console.error('Erro ao consultar vendas:', error);
@@ -1146,7 +1160,6 @@
             document.getElementById('sales-history-modal').classList.add('flex');
     
             try {
-                // Fetch data if not already present
                 if (this.sysledData.length === 0) {
                     await this.fetchSysledData();
                 }
@@ -1168,7 +1181,7 @@
                     data_finalizacao_prevenda: sale.dataFinalizacaoPrevenda
                 }));
 
-                this.renderSalesHistoryModal(mappedSalesData);
+                this.renderSalesHistoryModal(mappedSalesData, true); // From API
     
             } catch (error) {
                 console.error('Erro ao consultar vendas na Sysled:', error);
@@ -1176,7 +1189,7 @@
             }
         }
     
-        renderSalesHistoryModal(salesData) {
+        renderSalesHistoryModal(salesData, isApiData) {
             const container = document.getElementById('sales-history-table-container');
     
             if (!salesData || salesData.length === 0) {
@@ -1184,13 +1197,18 @@
                 return;
             }
     
-            const rowsHtml = salesData.map(sale => `
-                <tr class="border-b text-sm">
-                    <td class="p-2">${sale.id_pedido}</td>
-                    <td class="p-2 text-right">${this.formatCurrency(sale.valor_nota)}</td>
-                    <td class="p-2 text-center">${this.formatApiDateToBR(sale.data_finalizacao_prevenda)}</td>
-                </tr>
-            `).join('');
+            const rowsHtml = salesData.map(sale => {
+                const idCellContent = isApiData 
+                    ? `<a href="#" class="view-sale-details-btn text-blue-600 hover:underline" data-pedido-id="${sale.id_pedido}">${sale.id_pedido}</a>`
+                    : sale.id_pedido;
+                return `
+                    <tr class="border-b text-sm">
+                        <td class="p-2">${idCellContent}</td>
+                        <td class="p-2 text-right">${this.formatCurrency(sale.valor_nota)}</td>
+                        <td class="p-2 text-center">${this.formatApiDateToBR(sale.data_finalizacao_prevenda)}</td>
+                    </tr>
+                `
+            }).join('');
     
             container.innerHTML = `
                 <table class="w-full">
@@ -1209,6 +1227,118 @@
         closeSalesHistoryModal() {
             document.getElementById('sales-history-modal').classList.remove('flex');
         }
+
+        handleSalesHistoryTableClick(e) {
+            const detailsBtn = e.target.closest('.view-sale-details-btn');
+            if (detailsBtn) {
+                e.preventDefault();
+                const pedidoId = detailsBtn.dataset.pedidoId;
+                this.openSaleDetailsModal(pedidoId);
+            }
+        }
+
+        openSaleDetailsModal(pedidoId) {
+            if (!pedidoId || pedidoId === 'N/A') {
+                alert("ID do Pedido inválido.");
+                return;
+            }
+            const saleData = this.sysledData.find(row => String(row.idPedido) === String(pedidoId));
+
+            if (!saleData) {
+                alert(`Detalhes para o pedido ${pedidoId} não foram encontrados nos dados da API.`);
+                return;
+            }
+
+            const modalTitle = document.getElementById('sale-details-modal-title');
+            const contentContainer = document.getElementById('sale-details-content');
+            
+            modalTitle.textContent = `Detalhes da Venda - Pedido ${pedidoId}`;
+            document.getElementById('import-single-sale-btn').dataset.pedidoId = pedidoId;
+
+            const detailsHtml = Object.entries(saleData).map(([key, value]) => {
+                return `
+                    <tr class="border-b">
+                        <td class="p-2 font-semibold text-gray-600 align-top">${key}</td>
+                        <td class="p-2 text-gray-800">${value !== null && value !== undefined ? value : ''}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            contentContainer.innerHTML = `
+                <table class="w-full text-sm">
+                    <tbody>
+                        ${detailsHtml}
+                    </tbody>
+                </table>
+            `;
+
+            document.getElementById('sale-details-modal').classList.add('flex');
+        }
+
+        closeSaleDetailsModal() {
+            document.getElementById('sale-details-modal').classList.remove('flex');
+        }
+
+        async handleImportSingleSale(e) {
+            const pedidoId = e.target.dataset.pedidoId;
+            if (!pedidoId || pedidoId === 'N/A') {
+                alert('ID do pedido inválido.');
+                return;
+            }
+
+            // 1. Check if already imported
+            const { data: existingImport, error: checkError } = await supabase
+                .from('sysled_imports')
+                .select('id_pedido')
+                .eq('id_pedido', pedidoId)
+                .maybeSingle();
+
+            if (checkError) {
+                alert('Erro ao verificar a venda: ' + checkError.message);
+                return;
+            }
+
+            if (existingImport) {
+                alert(`Venda ${pedidoId} já foi importada anteriormente.`);
+                return;
+            }
+
+            // 2. Find sale data
+            const saleData = this.sysledData.find(row => String(row.idPedido) === String(pedidoId));
+            if (!saleData) {
+                alert('Não foi possível encontrar os dados completos da venda. Tente atualizar a consulta Sysled.');
+                return;
+            }
+            
+            // 3. Map to the format processRTData expects
+            const dataToProcess = [{
+                id_parceiro: saleData.idParceiro,
+                valor_venda: this.parseApiNumber(saleData.valorNota),
+                parceiro: saleData.parceiro
+            }];
+
+            // 4. Process the data
+            this.isSysledImport = false; // Ensure it's treated as a manual/single import, avoiding file save logic
+            await this.processRTData(dataToProcess);
+
+            // 5. Log the import
+            const sysledImportPayload = {
+                id_parceiro: saleData.idParceiro,
+                valor_nota: this.parseApiNumber(saleData.valorNota),
+                data_finalizacao_prevenda: saleData.dataFinalizacaoPrevenda,
+                id_pedido: saleData.idPedido
+            };
+            const { error: insertError } = await supabase.from('sysled_imports').insert([sysledImportPayload]);
+            if (insertError) {
+                console.error("Erro ao registrar na tabela sysled_imports:", insertError);
+                alert("A venda foi processada, mas houve um erro ao salvar o histórico de importação. Verifique o console.");
+            }
+
+            // 6. Close modals. The renderAll() is already called by processRTData.
+            this.closeSaleDetailsModal();
+            this.closeSalesHistoryModal();
+        }
+
 
         // --- LÓGICA DE PAGAMENTO ---
 
@@ -2519,4 +2649,3 @@
 </script>
 </body>
 </html>
-
