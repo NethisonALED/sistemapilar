@@ -268,7 +268,7 @@
                                         <label for="arquiteto-telefone" class="block text-sm font-medium text-gray-600">Telefone</label>
                                         <input type="tel" id="arquiteto-telefone" class="w-full p-2 bg-gray-50 border rounded-lg mt-1">
                                     </div>
-                                    <div>
+                                     <div>
                                         <label for="arquiteto-pix" class="block text-sm font-medium text-gray-600">Chave PIX</label>
                                         <input type="text" id="arquiteto-pix" class="w-full p-2 bg-gray-50 border rounded-lg mt-1">
                                     </div>
@@ -277,7 +277,7 @@
                             </div>
                             <div class="bg-white rounded-2xl shadow-lg p-6">
                                 <h2 class="text-xl font-semibold mb-4">Importar Planilha</h2>
-                                <div class="text-center">
+                                 <div class="text-center">
                                     <label for="arquiteto-file-input" class="file-input-label bg-indigo-600 hover:bg-indigo-700"><i class="fas fa-file-excel mr-2"></i>Escolher Planilha</label>
                                     <input type="file" id="arquiteto-file-input" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" class="file-input">
                                     <p id="file-name-arquitetos" class="text-sm text-gray-500 mt-2"></p>
@@ -286,17 +286,17 @@
                         </div>
                         <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6">
                             <div class="flex justify-between items-center mb-4">
-                                <h2 class="text-xl font-semibold">Arquitetos Cadastrados</h2>
-                                <div class="flex gap-2 items-center">
+                                 <h2 class="text-xl font-semibold">Arquitetos Cadastrados</h2>
+                                 <div class="flex gap-2 items-center">
                                     <button id="gerar-pagamentos-rt-btn" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded-lg text-sm">
                                         <i class="fas fa-money-check-alt mr-2"></i>Gerar Pagamentos
                                     </button>
-                                    <button id="export-csv-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg text-sm">Exportar</button>
-                                    <button id="delete-all-arquitetos-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg text-sm">Apagar Todos</button>
-                                </div>
+                                     <button id="export-csv-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg text-sm">Exportar</button>
+                                     <button id="delete-all-arquitetos-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg text-sm">Apagar Todos</button>
+                                 </div>
                             </div>
                             <div class="mb-4">
-                                <input type="text" id="arquiteto-search-input" placeholder="Pesquisar por ID ou Nome..." class="w-full p-3 bg-gray-50 border rounded-lg">
+                                 <input type="text" id="arquiteto-search-input" placeholder="Pesquisar por ID ou Nome..." class="w-full p-3 bg-gray-50 border rounded-lg">
                             </div>
                             <div id="arquitetos-table-container" class="overflow-x-auto"></div>
                         </div>
@@ -336,7 +336,7 @@
                     <div id="pagamentos-container" class="space-y-8"></div>
                 </div>
 
-                <div id="arquivos-importados-view" class="tab-view">
+                 <div id="arquivos-importados-view" class="tab-view">
                     <h1 class="text-3xl font-bold text-gray-900 mb-6">Arquivos Importados</h1>
                     <div id="arquivos-importados-container" class="space-y-6"></div>
                 </div>
@@ -348,18 +348,22 @@
                              <i class="fas fa-sync-alt mr-2"></i>Calcular Resultados
                          </button>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <div class="bg-white rounded-2xl shadow-lg p-6 flex flex-col">
                             <h2 class="text-sm font-medium text-gray-500">Valor de RTs Pagas</h2>
                             <p id="total-rt" class="text-3xl font-bold mt-2 text-emerald-600">R$ 0,00</p>
                         </div>
                         <div class="bg-white rounded-2xl shadow-lg p-6 flex flex-col">
-                            <h2 class="text-sm font-medium text-gray-500">Quantidade de RTs Pagas</h2>
-                            <p id="total-rt-quantidade" class="text-3xl font-bold mt-2 text-blue-600">0</p>
+                            <h2 class="text-sm font-medium text-gray-500">Valor dos Pedidos</h2>
+                            <p id="total-pedidos-valor" class="text-3xl font-bold mt-2 text-blue-600">R$ 0,00</p>
                         </div>
                         <div class="bg-white rounded-2xl shadow-lg p-6 flex flex-col">
-                            <h2 class="text-sm font-medium text-gray-500">RT Média</h2>
-                            <p id="rt-media" class="text-3xl font-bold mt-2 text-indigo-600">R$ 0,00</p>
+                            <h2 class="text-sm font-medium text-gray-500">Quantidade de Pedidos</h2>
+                            <p id="total-pedidos-quantidade" class="text-3xl font-bold mt-2 text-indigo-600">0</p>
+                        </div>
+                        <div class="bg-white rounded-2xl shadow-lg p-6 flex flex-col">
+                            <h2 class="text-sm font-medium text-gray-500">Pedido Médio</h2>
+                            <p id="pedido-medio" class="text-3xl font-bold mt-2 text-purple-600">R$ 0,00</p>
                         </div>
                     </div>
                 </div>
@@ -422,38 +426,38 @@
                     </div>
                     
                     <div class="md:col-span-2 mt-4 pt-4 border-t">
-                        <h3 class="text-lg font-semibold mb-2">Valores de RT</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div class="bg-gray-50 p-4 rounded-lg">
-                                <label class="block text-sm font-medium text-gray-600">RT Acumulado (para pagamento)</label>
-                                <p id="edit-arquiteto-rt-acumulado" class="mt-1 text-2xl font-bold text-emerald-600"></p>
-                            </div>
+                         <h3 class="text-lg font-semibold mb-2">Valores de RT</h3>
+                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                              <div class="bg-gray-50 p-4 rounded-lg">
-                                <label class="block text-sm font-medium text-gray-600">Total de RTs Pagas (histórico)</label>
-                                <p id="edit-arquiteto-rt-total-pago" class="mt-1 text-2xl font-bold text-blue-600"></p>
-                            </div>
-                        </div>
+                                 <label class="block text-sm font-medium text-gray-600">RT Acumulado (para pagamento)</label>
+                                 <p id="edit-arquiteto-rt-acumulado" class="mt-1 text-2xl font-bold text-emerald-600"></p>
+                             </div>
+                              <div class="bg-gray-50 p-4 rounded-lg">
+                                 <label class="block text-sm font-medium text-gray-600">Total de RTs Pagas (histórico)</label>
+                                 <p id="edit-arquiteto-rt-total-pago" class="mt-1 text-2xl font-bold text-blue-600"></p>
+                             </div>
+                         </div>
                     </div>
                     
                     <div class="md:col-span-2 mt-4 pt-4 border-t">
-                        <h3 class="text-lg font-semibold mb-2">Configurações de Venda</h3>
-                        <div class="grid grid-cols-3 gap-4 items-end">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-600">Valor Total de Vendas</label>
-                                <p id="rt-valor-vendas" class="mt-1 text-lg font-bold text-gray-800"></p>
-                            </div>
-                            <div>
-                                <label for="rt-percentual" class="block text-sm font-medium text-gray-600">Percentual de RT</label>
-                                <select id="rt-percentual" class="w-full p-2 bg-gray-50 border rounded-lg mt-1">
-                                    <option value="0.05">5%</option>
-                                    <option value="0.10">10%</option>
-                                </select>
-                            </div>
-                            <div>
+                         <h3 class="text-lg font-semibold mb-2">Configurações de Venda</h3>
+                         <div class="grid grid-cols-3 gap-4 items-end">
+                             <div>
+                                 <label class="block text-sm font-medium text-gray-600">Valor Total de Vendas</label>
+                                 <p id="rt-valor-vendas" class="mt-1 text-lg font-bold text-gray-800"></p>
+                             </div>
+                             <div>
+                                 <label for="rt-percentual" class="block text-sm font-medium text-gray-600">Percentual de RT</label>
+                                 <select id="rt-percentual" class="w-full p-2 bg-gray-50 border rounded-lg mt-1">
+                                     <option value="0.05">5%</option>
+                                     <option value="0.10">10%</option>
+                                 </select>
+                             </div>
+                             <div>
                                 <label class="block text-sm font-medium text-gray-600">Cálculo Exemplo</label>
-                                <p id="rt-valor-calculado" class="mt-1 text-lg font-bold text-gray-800"></p>
-                            </div>
-                        </div>
+                                 <p id="rt-valor-calculado" class="mt-1 text-lg font-bold text-gray-800"></p>
+                             </div>
+                         </div>
                     </div>
 
                     <div class="md:col-span-2 flex justify-end gap-4 mt-6">
@@ -1798,14 +1802,14 @@
         }
         
         renderResultados() {
-            const pagamentosPagos = Object.values(this.pagamentos).flat().filter(p => p.pago);
-            const totalRTs = pagamentosPagos.reduce((sum, p) => sum + this.parseCurrency(p.rt_valor || 0), 0);
-            const quantidadeRTsPagas = pagamentosPagos.length;
-            const rtMedia = quantidadeRTsPagas > 0 ? totalRTs / quantidadeRTsPagas : 0;
-
+            const totalRTs = Object.values(this.pagamentos).flat().reduce((sum, p) => p.pago ? sum + this.parseCurrency(p.rt_valor || 0) : sum, 0);
             document.getElementById('total-rt').textContent = this.formatCurrency(totalRTs);
-            document.getElementById('total-rt-quantidade').textContent = quantidadeRTsPagas;
-            document.getElementById('rt-media').textContent = this.formatCurrency(rtMedia);
+            const totalPedidosValor = this.arquitetos.reduce((sum, a) => sum + this.parseCurrency(a.valorVendasTotal || 0), 0);
+            document.getElementById('total-pedidos-valor').textContent = this.formatCurrency(totalPedidosValor);
+            const totalPedidosQuantidade = this.arquitetos.reduce((sum, a) => sum + (a.salesCount || 0), 0);
+            document.getElementById('total-pedidos-quantidade').textContent = totalPedidosQuantidade;
+            const pedidoMedio = totalPedidosQuantidade > 0 ? totalPedidosValor / totalPedidosQuantidade : 0;
+            document.getElementById('pedido-medio').textContent = this.formatCurrency(pedidoMedio);
         }
 
         async fetchSysledData() {
@@ -1992,17 +1996,17 @@
                         .from('sysled_imports')
                         .select('id_pedido')
                         .in('id_pedido', pedidoIds);
-    
+        
                     if (error) {
                         alert('Erro ao verificar vendas existentes na tabela sysled_imports. Verifique se a tabela foi criada corretamente. ' + error.message);
                         this.closeRtMappingModal();
                         return;
                     }
-    
+        
                     const existingIdsSet = new Set(existingImports.map(item => String(item.id_pedido)));
                     const alreadyImported = processedData.filter(row => existingIdsSet.has(String(row.id_prevenda)));
                     dataToProcess = processedData.filter(row => !existingIdsSet.has(String(row.id_prevenda)));
-    
+        
                     if (alreadyImported.length > 0) {
                         const importedIdsStr = alreadyImported.map(row => row.id_prevenda).join(', ');
                         alert(`Venda(s) já importada(s) e ignorada(s): ${importedIdsStr}`);
@@ -2013,7 +2017,7 @@
             if (dataToProcess.length > 0) {
                 // Processa apenas os novos dados para atualizar arquitetos
                 await this.processRTData(dataToProcess);
-    
+        
                 // Se for importação Sysled, salva o log na nova tabela
                 if (this.isSysledImport) {
                     const sysledImportsPayload = dataToProcess.map(row => ({
@@ -2022,9 +2026,9 @@
                         data_finalizacao_prevenda: row.data_venda, // Supabase lida com a conversão de string ISO para timestamp
                         id_pedido: row.id_prevenda
                     }));
-    
+        
                     const { error: insertError } = await supabase.from('sysled_imports').insert(sysledImportsPayload);
-    
+        
                     if (insertError) {
                         console.error("Erro ao salvar na tabela sysled_imports:", insertError);
                         alert("Os dados foram processados, mas houve um erro ao salvar o histórico de importação Sysled. Verifique o console.");
@@ -2426,3 +2430,5 @@
 </script>
 </body>
 </html>
+
+
